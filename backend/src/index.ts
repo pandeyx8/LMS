@@ -1,17 +1,13 @@
-import express from "express";
 import dotenv from "dotenv";
+import path from "path";
 import connectDB from "./db/config";
+import { app } from "./app";
 
-dotenv.config({
-  path: './.env'
-});
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 connectDB().then(() => {
-  const app = express();
-  app.get("/", (req, res) => {
-    res.send("Backend Running");
-  });
-  app.listen(process.env.PORT, () => {
-    console.log(`Server is running on port ${process.env.PORT}`);
+  const port = Number(process.env.PORT) || 3000;
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
   });
 });
