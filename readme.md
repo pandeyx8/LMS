@@ -6,6 +6,14 @@ A role-based Loan Management System developed using Next.js, Express.js, TypeScr
 
 The application follows a workflow where a borrower submits a loan application along with a salary slip. The application then moves through different stages handled by dedicated roles such as Sales, Sanction, Disbursement, and Collection. An Admin role has access to all modules and can monitor the overall system.
 
+## Live demo
+
+Live application: https://lms-gold-kappa.vercel.app/
+
+## Project walkthrough video
+
+Video explanation: https://drive.google.com/file/d/1d_hocb7ck_G2JYaGYtuiKxrrMLeCiQCh/view?usp=sharing
+
 ## Features
 
 ### Borrower
@@ -172,10 +180,4 @@ Loan Application
 
 This project was developed as part of an assignment to demonstrate authentication, role-based access control, loan processing workflows, file uploads, and payment tracking using a full-stack application.
 
-## Live demo
 
-Live application: https://lms-gold-kappa.vercel.app/
-
-## Project walkthrough video
-
-Video explanation: [ADD_VIDEO_LINK_HERE]
