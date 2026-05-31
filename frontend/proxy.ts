@@ -11,9 +11,9 @@ export function proxy(req: NextRequest) {
   const token = req.cookies.get('accessToken')?.value
   const role = req.cookies.get('lms_role')?.value
 
-  if (!token) {
-    return NextResponse.redirect(new URL('/', req.url))
-  }
+  if (!role) {
+  return NextResponse.redirect(new URL('/', req.url))
+}
 
   if (pathname.startsWith('/borrower') && role !== 'borrower' && role !== 'admin') {
     return NextResponse.redirect(new URL('/', req.url))
