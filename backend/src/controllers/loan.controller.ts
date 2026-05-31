@@ -277,18 +277,27 @@ const getBorrowerLoans = asyncHandler(async (req: any, res: any) => {
 
   const result = loans.map((l) => ({
     id: l._id,
+    borrower: l.borrower,
+    createdBy: l.createdBy,
     loanAmount: l.loanAmount,
     tenureDays: l.tenureDays,
+    interestRate: l.interestRate,
+    simpleInterest: l.simpleInterest,
+    totalRepayment: l.totalRepayment,
+    totalPaidAmount: l.totalPaidAmount,
     status: l.status,
     createdAt: l.createdAt,
+    updatedAt: l.updatedAt,
     outstandingAmount: l.outstandingAmount,
+    purpose: l.purpose,
+    personalDetails: l.personalDetails,
     salarySlip: l.salarySlip
       ? {
-          originalName: l.salarySlip.originalName,
-          size: l.salarySlip.size,
-          mimeType: l.salarySlip.mimeType,
-          downloadUrl: `/api/v1/loans/${l._id}/salary-slip`,
-        }
+        originalName: l.salarySlip.originalName,
+        size: l.salarySlip.size,
+        mimeType: l.salarySlip.mimeType,
+        downloadUrl: `/api/v1/loans/${l._id}/salary-slip`,
+      }
       : null,
   }));
 
@@ -296,6 +305,57 @@ const getBorrowerLoans = asyncHandler(async (req: any, res: any) => {
 });
 
 export { getBorrowerLoans };
+
+const getBorrowerLoansByUsername = asyncHandler(async (req: any, res: any) => {
+  const user = req.user;
+  if (!user) throw new ApiError(401, "Unauthorized");
+
+  const requestedUsername = String(req.params.username ?? "").trim().toLowerCase();
+  if (!requestedUsername) {
+    throw new ApiError(400, "Username is required");
+  }
+
+  if (user.role !== "admin" && String(user.username).toLowerCase() !== requestedUsername) {
+    throw new ApiError(403, "Forbidden");
+  }
+
+  const borrower = await User.findOne({ username: requestedUsername });
+  if (!borrower) {
+    throw new ApiError(404, "Borrower not found");
+  }
+
+  const loans = await Loan.find({ borrower: borrower._id }).sort({ createdAt: -1 });
+
+  const result = loans.map((l) => ({
+    id: l._id,
+    borrower: l.borrower,
+    createdBy: l.createdBy,
+    loanAmount: l.loanAmount,
+    tenureDays: l.tenureDays,
+    interestRate: l.interestRate,
+    simpleInterest: l.simpleInterest,
+    totalRepayment: l.totalRepayment,
+    totalPaidAmount: l.totalPaidAmount,
+    status: l.status,
+    createdAt: l.createdAt,
+    updatedAt: l.updatedAt,
+    outstandingAmount: l.outstandingAmount,
+    purpose: l.purpose,
+    personalDetails: l.personalDetails,
+    salarySlip: l.salarySlip
+      ? {
+        originalName: l.salarySlip.originalName,
+        size: l.salarySlip.size,
+        mimeType: l.salarySlip.mimeType,
+        downloadUrl: `/api/v1/loans/${l._id}/salary-slip`,
+      }
+      : null,
+  }));
+
+  return res.status(200).json(new ApiResponse(200, result, "Borrower loans"));
+});
+
+export { getBorrowerLoansByUsername };
 
 const addPayment = asyncHandler(async (req: any, res: any) => {
   const loanId = req.params.id;
@@ -358,6 +418,32 @@ const addPayment = asyncHandler(async (req: any, res: any) => {
 
 export { addPayment };
 
+const getLoanPayments = asyncHandler(async (req: any, res: any) => {
+  const loanId = req.params.id;
+  const user = req.user;
+
+  if (!user) throw new ApiError(401, "Unauthorized");
+
+  const loan = await Loan.findById(loanId).populate("borrower", "username fullname email");
+  if (!loan) throw new ApiError(404, "Loan not found");
+
+  const payments = await Payment.find({ loan: loan._id })
+    .populate("borrower", "username fullname email")
+    .populate("recordedBy", "username fullname email")
+    .sort({ paidAt: -1, createdAt: -1 });
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        loan,
+        payments,
+      },
+      "Loan payments"
+    )
+  );
+});
+
 const getSalesLeads = asyncHandler(async (_req: any, res: any) => {
   const appliedBorrowerIds = await Loan.distinct("borrower");
 
@@ -399,11 +485,15 @@ const getCollectionQueue = asyncHandler(async (_req: any, res: any) => {
 });
 
 const getAdminOverview = asyncHandler(async (_req: any, res: any) => {
-  const [statusCounts, totalUsers, totalBorrowers, totalLoans] = await Promise.all([
+  const [statusCounts, totalUsers, totalBorrowers, totalLoans, recentApplications] = await Promise.all([
     Loan.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
     User.countDocuments({}),
     User.countDocuments({ role: "borrower" }),
     Loan.countDocuments({}),
+    Loan.find({})
+      .populate("borrower", "username fullname email")
+      .sort({ createdAt: -1 })
+      .limit(5),
   ]);
 
   return res.status(200).json(
@@ -414,6 +504,7 @@ const getAdminOverview = asyncHandler(async (_req: any, res: any) => {
         totalBorrowers,
         totalLoans,
         statusCounts,
+        recentApplications,
       },
       "Admin overview"
     )
@@ -426,4 +517,5 @@ export {
   getDisbursementQueue,
   getCollectionQueue,
   getAdminOverview,
+  getLoanPayments,
 };

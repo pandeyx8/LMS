@@ -52,7 +52,7 @@ const seedUsers: SeedUser[] = [
   },
   {
     username: "borrower",
-    fullname: "Rahul Kumar",
+    fullname: "Priyanshu Pandey",
     email: "borrower@lms.com",
     password: "Borrower@123",
     role: "borrower",

@@ -33,28 +33,5 @@ router.get(
   }
 );
 
-// //protected routes
-// router.get("/", verifyJWT, checkRole("admin"), getallUsers);
-// router.patch("/:userId/role", verifyJWT, checkRole("admin"), updateUserRole);
-// router.patch("/:userId/status", verifyJWT, checkRole("admin"), updateUserStatus);
-// router.patch(
-//   "/password",
-//   verifyJWT,
-//   [
-//     body("oldPassword").notEmpty().withMessage("Old password is required"),
-//     body("newPassword").notEmpty().withMessage("New password is required"),
-//   ],
-//   changeCurrentPassword
-// );
-// router.patch(
-//   "/account/update",
-//   verifyJWT,
-//   [
-//     body("fullname").notEmpty().withMessage("Fullname is required"),
-//     body("email").isEmail().withMessage("Invalid email format"),
-//   ],
-//   updateAccountDetails
-// );
-
 
 export default router;

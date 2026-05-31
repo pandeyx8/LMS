@@ -3,11 +3,13 @@ import { body } from "express-validator";
 import {
   createLoan,
   getBorrowerLoans,
+  getBorrowerLoansByUsername,
   getSalesLeads,
   getSanctionQueue,
   getDisbursementQueue,
   getCollectionQueue,
   getAdminOverview,
+  getLoanPayments,
 } from "../controllers/loan.controller";
 import { verifyJWT } from "../middleware/auth.middleware";
 import { authorizeRoles } from "../middleware/authorizeRoles";
@@ -41,6 +43,7 @@ router.post(
 
 // borrower: list own loans
 router.get("/my", verifyJWT, authorizeRoles("borrower"), getBorrowerLoans);
+router.get("/borrower/:username", verifyJWT, authorizeRoles("borrower", "admin"), getBorrowerLoansByUsername);
 
 // dashboard module queues
 router.get("/sales/leads", verifyJWT, authorizeRoles("sales", "admin"), getSalesLeads);
@@ -102,6 +105,13 @@ router.post(
     body("paidAt").optional().isISO8601().withMessage("paidAt must be a valid date"),
   ],
   addPayment
+);
+
+router.get(
+  "/:id/payments",
+  verifyJWT,
+  authorizeRoles("collection", "admin"),
+  getLoanPayments
 );
 
 export default router;
