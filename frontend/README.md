@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Frontend logic overview
 
-## Getting Started
+This document describes the implemented frontend logic for the LMS application (routes, components, client API, state, forms, and auth-related behavior). It omits general Next.js boilerplate and deployment notes.
 
-First, run the development server:
+Routes (app router)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- `/signup` — registration form that calls the auth service to create a borrower account.
+- `/borrower/apply` — loan application form; sends a multipart `FormData` payload (including salary slip file) to the loan apply API.
+- `/borrower/loans` — lists loans for the current borrower using `getMyLoans()` from the loan service.
+- `/borrower/[username]/loans` — lists loans for a specific borrower (used by admin/ops views).
+- `/ops/*` — operations dashboard pages for roles: `sales`, `sanction`, `disbursement`, `collection`, and `overview`. These pages display queues and actions driven by service calls (approve, reject, disburse, record payments).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Components (key UI building blocks)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `AppShell`, `Navbar`, `Sidebar` — layout and navigation.
+- Form controls: `Input`, `Textarea`, `Select`, `Button` — used across auth and loan forms.
+- `Table`, `EmptyState`, `Spinner`, `Modal`, `Badge` — used for lists, loading states, and CRUD actions.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Client state & auth
 
-## Learn More
+- `src/store/useAuth.ts` — Zustand store that persists `user`, `accessToken`, and `role` to `localStorage` and exposes `setAuth()` and `logout()`.
+- `src/hooks/useRequireAuth.ts` — client-side guard that redirects unauthenticated users and enforces role-based access (allows `admin` override).
+- `src/lib/session.ts` — helper for setting/clearing a role cookie used by some UI flows.
 
-To learn more about Next.js, take a look at the following resources:
+API client and services
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `src/lib/axios.ts` — Axios instance used across services; reads `NEXT_PUBLIC_API_URL` and injects `Authorization: Bearer <token>` from the auth store via a request interceptor.
+- `src/lib/api.ts` — `unwrapResponse()` helper that extracts the `data` payload from API responses.
+- `src/services/auth.service.ts` — `login()`, `logout()`, `register()` wrappers around `/auth` endpoints.
+- `src/services/loan.service.ts` — loan-related calls: `applyLoan(formData)`, `getMyLoans()`, queue fetchers (`getSanctionQueue()`, `getDisbursementQueue()`, `getCollectionQueue()`), `approveLoan()`, `rejectLoan()`, `disburseLoan()`, and admin overview.
+- `src/services/payment.service.ts` — `recordPayment()` and `getLoanPayments()` for recording and listing payments.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Forms and uploads
 
-## Deploy on Vercel
+- Loan application uses `FormData` and sets `Content-Type: multipart/form-data` when calling `applyLoan()`.
+- Client-side validation includes accepted file types and size checks before upload (handled in the apply form component).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Role-based UI behavior
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Pages under `/ops/*` check the current user's role (via `useRequireAuth` and `useAuth` store) and render action buttons (approve/reject/disburse/record payment) only when the user's role permits.
+- UI actions call the corresponding service methods; services map directly to backend endpoints and return typed responses used to update local UI state.
+
+Environment
+
+- `NEXT_PUBLIC_API_URL` — base URL used by the Axios client (`src/lib/axios.ts`).
+
+Files to inspect for logic
+
+- Routes/components: `src/app` and `app` folders.
+- API & services: `src/lib/axios.ts`, `src/lib/api.ts`, `src/services/*`.
+- State & hooks: `src/store/useAuth.ts`, `src/hooks/useRequireAuth.ts`, `src/lib/session.ts`.
+
+This README intentionally focuses on implemented frontend logic only.

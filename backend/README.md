@@ -1,6 +1,6 @@
 # LMS Backend
 
-This backend uses Express + TypeScript + MongoDB.
+This repository contains the implemented backend for the LMS application. The backend is built with Express, TypeScript, and MongoDB and includes authentication, role-based access control, loan workflow endpoints, file upload handling, data seeding, and maintenance scripts.
 
 Quick start
 
@@ -13,58 +13,57 @@ npm run seed
 npm run dev
 ```
 
-Uploads
+Implemented features
 
-- Salary slips are stored locally (development): `public/uploads/salary-slips`.
-- Accepted types: PDF, JPG, PNG. Max size: 5MB.
-- Files are saved by Multer and metadata is stored on the `Loan` document (`salarySlip.filePath`, `fileName`, etc.).
-- Files are served through a protected endpoint: `GET /api/v1/loans/:id/salary-slip` (requires authentication and RBAC).
+- Tech stack: Express + TypeScript + MongoDB.
+- Authentication: JWT-based auth with protected API routes and standard `401`/`403` responses for unauthenticated and unauthorized requests.
+- RBAC: role definitions and enforcement for `admin`, `sales`, `sanction`, `disbursement`, `collection`, and `borrower` roles.
 
-RBAC and Module APIs (Assignment Scope)
+File uploads
 
-- Roles: `admin`, `sales`, `sanction`, `disbursement`, `collection`, `borrower`
-- Auth errors:
-  - `401` for unauthenticated requests (missing/invalid JWT)
-  - `403` for authenticated but unauthorized role
+- Salary slips storage: `public/uploads/salary-slips` (local storage).
+- Accepted file types: PDF, JPG, PNG. Maximum file size: 5MB.
+- Upload handling: files are saved via Multer; file metadata is persisted on the `Loan` document (fields include `salarySlip.filePath`, `fileName`, etc.).
+- File access: salary slip files are served via a protected endpoint `GET /api/v1/loans/:id/salary-slip` with authentication and role checks.
 
-Borrower portal
+APIs and endpoints
+
+Borrower portal endpoints:
 
 - `POST /api/v1/auth/register`
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/logout`
-- `POST /api/v1/loans/apply` (borrower only)
-- `GET /api/v1/loans/my` (borrower only)
+- `POST /api/v1/loans/apply` (restricted to `borrower` role)
+- `GET /api/v1/loans/my` (restricted to `borrower` role)
 
-Dashboard module APIs
+Dashboard and workflow endpoints:
 
-- Sales module (`sales`, `admin`):
+- Sales module (roles: `sales`, `admin`):
   - `GET /api/v1/loans/sales/leads`
-- Sanction module (`sanction`, `admin`):
+- Sanction module (roles: `sanction`, `admin`):
   - `GET /api/v1/loans/sanction/queue`
   - `POST /api/v1/loans/:id/approve`
   - `POST /api/v1/loans/:id/reject`
-- Disbursement module (`disbursement`, `admin`):
+- Disbursement module (roles: `disbursement`, `admin`):
   - `GET /api/v1/loans/disbursement/queue`
   - `POST /api/v1/loans/:id/disburse`
-- Collection module (`collection`, `admin`):
+- Collection module (roles: `collection`, `admin`):
   - `GET /api/v1/loans/collection/queue`
-  - `POST /api/v1/loans/:id/payments`
-    - body: `amount`, `utr`, optional `paidAt`
-    - `utr` must be unique
-    - payment allowed only for `disbursed` loans
-    - loan auto-closes when outstanding reaches zero
-- Admin overview (`admin` only):
+  - `POST /api/v1/loans/:id/payments` — request body expects `amount`, `utr`, and optional `paidAt`.
+    - `utr` is enforced as unique.
+    - Payments are accepted only for loans in `disbursed` state.
+    - Loans transition to closed when outstanding amount reaches zero.
+- Admin overview (role: `admin`):
   - `GET /api/v1/loans/admin/overview`
 
-Salary slip access
+Salary slip access rules
 
-- `GET /api/v1/loans/:id/salary-slip`
-  - borrower: only own loan file
-  - admin/executive roles: accessible for assigned operations
+- Borrower role: access to salary slip only for the borrower's own loan.
+- Admin and operational roles: access to salary slips as required by assigned operations and role permissions.
 
-Seed
+Data seeding
 
-- Run `npm run seed` to create default users:
+- `npm run seed` creates default users and roles with seeded credentials:
   - admin: admin@lms.com / Admin@123
   - sales: sales@lms.com / Sales@123
   - sanction: sanction@lms.com / Sanction@123
@@ -74,26 +73,9 @@ Seed
 
 Environment
 
-- Copy `.env.example` to `.env` and fill your values.
+- Copy `.env.example` to `.env` and provide environment-specific values.
 
-Cleanup
+Maintenance
 
-- A cleanup script is provided to remove old uploads:
+- `npm run cleanup` is available to remove old uploads. Default retention is 90 days; retention days are configurable via the `UPLOAD_RETENTION_DAYS` environment variable.
 
-```bash
-# remove files older than 90 days (default)
-npm run cleanup
-# to change retention days, set env var
-UPLOAD_RETENTION_DAYS=30 npm run cleanup
-```
-
-Notes
-
-- Local storage is suitable for evaluation when the server runs as a single instance (local machine, VM, or container). For production or multi-instance deployments, migrate to an object store (S3/GCS/Azure Blob) and use signed URLs.
-
-If you want, I can:
-- Add S3 adapter and signed URL flow
-- Add borrower endpoints for listing loans (already added `/api/v1/loans/my`)
-- Implement CI/tests
-
-*** End of README

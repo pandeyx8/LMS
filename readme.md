@@ -171,3 +171,11 @@ Loan Application
 ## Notes
 
 This project was developed as part of an assignment to demonstrate authentication, role-based access control, loan processing workflows, file uploads, and payment tracking using a full-stack application.
+
+## Live demo
+
+Live application: https://lms-gold-kappa.vercel.app/
+
+## Project walkthrough video
+
+Video explanation: [ADD_VIDEO_LINK_HERE]
